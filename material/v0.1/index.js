@@ -3,13 +3,14 @@ var { htmlElements, createSignal, svgElements } = XJS;
 var { div, header, main, footer, style, span, button, h3, p, img } = htmlElements;
 var App = (appTitle, { routes = {}, currentRoute, invalidRoute = () => alert("Invalid Path.") } = {}) => {
   document.title = appTitle ?? "XJS Web App";
+  if (!routes[currentRoute.value]) return alert("Invalid Path.");
   return ({ appBar, sideBar, tabBar } = {}, ...children) => app({
     Routes: routes,
-    currentRoute: currentRoute || createSignal("#404"),
+    currentRoute,
     appBar,
     sideBar,
     renderer: () => {
-      const pageBuilder = routes[currentRoute.value] || routes["#404"] || invalidRoute;
+      const pageBuilder = routes[currentRoute.value] || invalidRoute;
       return pageBuilder?.();
     },
     tabBar
