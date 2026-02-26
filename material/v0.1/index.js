@@ -3,7 +3,7 @@ var { htmlElements, createSignal, svgElements } = XJS;
 var { div, header, main, footer, style, span, button, h3, p, img } = htmlElements;
 var App = (appTitle, { routes = {}, currentRoute, invalidRoute = () => alert("Invalid Path.") } = {}) => {
   document.title = appTitle ?? "XJS Web App";
-  return ({ appBar, sideBar, tabBar } = {}, children) => app({
+  return ({ appBar, sideBar, tabBar } = {}, ...children) => app({
     Routes: routes,
     currentRoute: currentRoute || createSignal("#404"),
     appBar,
@@ -15,7 +15,7 @@ var App = (appTitle, { routes = {}, currentRoute, invalidRoute = () => alert("In
     tabBar
   }, children);
 };
-var app = ({ appBar, sideBar, renderer, tabBar } = {}, ...children) => {
+var app = ({ appBar, sideBar, renderer, tabBar } = {}, children) => {
   return div(
     {
       style: {
@@ -40,7 +40,14 @@ var app = ({ appBar, sideBar, renderer, tabBar } = {}, ...children) => {
       sideBar,
       renderer
     ),
-    tabBar ? footer(tabBar) : null,
+    tabBar ? footer({
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center"
+      }
+    }, tabBar) : null,
     children
   );
 };
@@ -664,8 +671,9 @@ var TabBar = (tabs, { selected } = {}) => {
         bottom: "0",
         display: "flex",
         width: "100%",
-        borderBottom: "1px solid var(--selected-color)",
-        height: "4rem"
+        //border: '1px solid var(--selected-color)',
+        height: "6rem",
+        maxWidth: "480px"
       }
     },
     tabs.map((tab, index) => {
@@ -674,7 +682,7 @@ var TabBar = (tabs, { selected } = {}) => {
       const icon = tab.icon || null;
       return div3(
         {
-          onclick: () => selected.value = index,
+          onclick: () => tab.onclick(index),
           style: {
             flex: 1,
             display: "flex",
@@ -683,32 +691,32 @@ var TabBar = (tabs, { selected } = {}) => {
             justifyContent: "center",
             cursor: "pointer",
             position: "relative",
+            // borderBottom: () => isSelected() ? '1px solid var(--selected-color)' : 'none',
             transition: "color 0.2s ease",
-            backgroundColor: () => isSelected() ? "var(--selected-color)" : "transparent"
+            fontWeight: () => isSelected() ? "600" : "400"
+            // color: () => isSelected() ? "var(--primary-color)" : "inherit"
           }
         },
-        [
-          // Optional Icon
-          icon ? span3({ style: "font-size: 18px;" }, icon) : null,
-          // Label
-          span3({
-            style: {
-              fontSize: "14px",
-              fontWeight: isSelected() ? "600" : "500"
-            }
-          }, label2),
-          // Active Indicator (The Material Underline)
-          () => isSelected() ? div3({
-            style: {
-              position: "absolute",
-              bottom: 0,
-              width: "40px",
-              // M3 tabs usually have a shorter indicator than the full width
-              height: "3px",
-              borderRadius: "3px 3px 0 0"
-            }
-          }) : null
-        ]
+        // Optional Icon
+        icon ? span3({ style: "font-size: 18px;" }, icon) : null,
+        // Label
+        span3({
+          style: {
+            fontSize: "1.5rem"
+          }
+        }, label2),
+        // Active Indicator (The Material Underline)
+        () => isSelected() ? div3({
+          style: {
+            position: "absolute",
+            bottom: 0,
+            width: "50%",
+            // M3 tabs usually have a shorter indicator than the full width
+            height: "1rem",
+            borderRadius: "3px 3px 0 0",
+            borderBottom: () => isSelected() ? "2px solid var(--primary-color)" : "none"
+          }
+        }) : null
       );
     })
   );
@@ -1614,7 +1622,7 @@ var Expanded = (child, { flex = 1 } = {}) => {
     }
   }, child);
 };
-var Marker = ({ width = "100%", height = "1px", color = "var(--selected-color)" } = {}) => {
+var Marker = ({ width = "100%", height = "1px", color = "var(--primary-color)" } = {}) => {
   return div6({
     style: {
       width,
