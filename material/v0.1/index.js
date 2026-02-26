@@ -1,9 +1,7 @@
 // src/material/layouts.js
 var { htmlElements, createSignal, svgElements } = XJS;
 var { div, header, main, footer, style, span, button, h3, p, img } = htmlElements;
-var App = (appTitle, { routes = {}, currentRoute, invalidRoute = () => alert("Invalid Path.") } = {}) => {
-  document.title = document.title ?? appTitle ?? "XJS Web App";
-  if (!routes[currentRoute.value]) return alert("Invalid Path.");
+var App = ({ routes = {}, currentRoute, invalidRoute = () => alert("Invalid Path.") } = {}) => {
   return ({ appBar, sideBar, tabBar } = {}, ...children) => app({
     Routes: routes,
     currentRoute,
