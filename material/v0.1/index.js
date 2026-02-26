@@ -674,7 +674,7 @@ var TabBar = (tabs, { selected } = {}) => {
         width: "100%",
         //border: '1px solid var(--selected-color)',
         height: "6rem",
-        maxWidth: "480px"
+        maxWidth: "48rem"
       }
     },
     tabs.map((tab, index) => {
@@ -692,10 +692,8 @@ var TabBar = (tabs, { selected } = {}) => {
             justifyContent: "center",
             cursor: "pointer",
             position: "relative",
-            // borderBottom: () => isSelected() ? '1px solid var(--selected-color)' : 'none',
             transition: "color 0.2s ease",
             fontWeight: () => isSelected() ? "600" : "400"
-            // color: () => isSelected() ? "var(--primary-color)" : "inherit"
           }
         },
         // Optional Icon
