@@ -5,12 +5,12 @@ Material styled components using XJS library as core.
 ## Import:
 
 ```javascript
-import * as Material from "https://cdn.jsdelivr.net/gh/xjs-org/xjs-ui@main/material/v0.1/index.min.js";
+import * as Material from "https://cdn.jsdelivr.net/gh/xjs-org/xjs-ui@latest/material/v0.1/index.min.js";
 ```
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/gh/xjs-org/xjs-ui@main/material/v0.1/index.min.js"
+  src="https://cdn.jsdelivr.net/gh/xjs-org/xjs-ui@latest/material/v0.1/index.min.js"
   crossorigin
 ></script>
 ```
