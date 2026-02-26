@@ -2,7 +2,7 @@
 var { htmlElements, createSignal, svgElements } = XJS;
 var { div, header, main, footer, style, span, button, h3, p, img } = htmlElements;
 var App = (appTitle, { routes = {}, currentRoute, invalidRoute = () => alert("Invalid Path.") } = {}) => {
-  document.title = appTitle ?? "XJS Web App";
+  document.title = document.title ?? appTitle ?? "XJS Web App";
   if (!routes[currentRoute.value]) return alert("Invalid Path.");
   return ({ appBar, sideBar, tabBar } = {}, ...children) => app({
     Routes: routes,
