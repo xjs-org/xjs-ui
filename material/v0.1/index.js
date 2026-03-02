@@ -1,26 +1,36 @@
+var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a2, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a2, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a2, prop, b[prop]);
+    }
+  return a2;
+};
+var __spreadProps = (a2, b) => __defProps(a2, __getOwnPropDescs(b));
+
 // src/material/layouts.js
 var { htmlElements, createSignal, svgElements } = XJS;
 var { div, header, main, footer, style, span, button, h3, p, img } = htmlElements;
-var App = ({ routes = {}, currentRoute, invalidRoute = () => alert("Invalid Path.") } = {}) => {
-  return ({ appBar, sideBar, tabBar } = {}, ...children) => app({
-    Routes: routes,
-    currentRoute,
-    appBar,
-    sideBar,
-    renderer: () => {
-      const pageBuilder = routes[currentRoute.value] || invalidRoute;
-      return pageBuilder?.();
-    },
-    tabBar
-  }, children);
-};
-var app = ({ appBar, sideBar, renderer, tabBar } = {}, children) => {
+var App = ({ appBar, body, navigationBar }, ...globals) => {
   return div(
     {
+      // Global Theme Wrapper
       style: {
+        backgroundColor: "var(--background-color:)",
+        color: "var(--forground-color:)",
+        transition: "all 0.3s ease",
         height: "100vh",
-        margin: 0,
-        padding: 0,
+        minHeight: "100vh",
         overflow: "hidden",
         // Prevents body-bounce on mobile
         display: "flex",
@@ -28,49 +38,37 @@ var app = ({ appBar, sideBar, renderer, tabBar } = {}, children) => {
       }
     },
     appBar ? header(appBar) : null,
-    main(
-      {
-        style: {
-          display: "flex",
-          flexDirection: "row",
-          gap: "10px"
-        }
-      },
-      sideBar,
-      renderer
-    ),
-    tabBar ? footer({
+    main({
       style: {
+        flex: 1,
+        overflowY: "auto",
+        position: "relative",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center"
+        flexDirection: "column"
       }
-    }, tabBar) : null,
-    children
+    }, body),
+    navigationBar ? footer(navigationBar) : null,
+    globals
   );
 };
-var Scaffold = ({ headerBar = null, body, footerBar = null, sideBar } = {}) => {
-  return div(
-    {
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        width: "100vw"
-      }
-    },
+var Scaffold = ({ headerBar, sideBar, body, footerBar, actionButton } = {}) => {
+  return [
     headerBar,
-    div({
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        width: "100%"
-      }
-    }, sideBar, body),
-    footerBar
-  );
+    sideBar,
+    body,
+    footerBar,
+    actionButton ? div(
+      {
+        style: {
+          position: "absolute",
+          bottom: footerBar ? "96px" : "16px",
+          right: "16px",
+          zIndex: 100
+        }
+      },
+      actionButton
+    ) : null
+  ];
 };
 var PageView = (pages = [], pageBuilder, { controller, physics = "scroll" } = {}) => {
   const pageLength = pages.length;
@@ -133,7 +131,7 @@ var Badge = (child, { label: label2, isDot = false } = {}) => {
         border: () => `2px solid var(--selected-color)`,
         pointerEvents: "none"
       }
-    }, isDot ? "" : label2?.isSignal ? label2.value : label2) : null
+    }, isDot ? "" : (label2 == null ? void 0 : label2.isSignal) ? label2.value : label2) : null
   ]);
 };
 var CircularProgress = ({ size = 24, color = "inherit", strokeWidth = 3 } = {}) => {
@@ -215,7 +213,7 @@ var LinearProgress = ({ value = null, color = "inherit", backgroundColor = "inhe
         borderRadius: "2px",
         transition: "width 0.2s linear",
         // Determinate logic
-        width: () => isIndeterminate ? "auto" : `${(value?.isSignal ? value.value : value) * 100}%`,
+        width: () => isIndeterminate ? "auto" : `${((value == null ? void 0 : value.isSignal) ? value.value : value) * 100}%`,
         // Indeterminate logic
         animation: isIndeterminate ? "m3-linear-indeterminate 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite" : "none",
         left: isIndeterminate ? "0" : "0"
@@ -266,7 +264,7 @@ var Snackbar = ({ message, isOpen, onAction, actionLabel, duration = 4e3 } = {})
     // Optional Action Button
     () => actionLabel ? button({
       onclick: () => {
-        onAction?.();
+        onAction == null ? void 0 : onAction();
         isOpen.value = false;
       },
       style: {
@@ -450,44 +448,9 @@ var Accordion = ({ title, leading } = {}, child) => {
     () => isOpened2.value ? div({ style: "padding: 0 16px 16px 16px; color: #49454F;" }, child) : null
   ]);
 };
-var Card = (child, { onClick } = {}) => div(
-  {
-    onclick: onClick,
-    style: "background: var(--background-color); border-radius: 12px; padding: 16px; border: 1px solid #CAC4D0; display: flex; flex-direction: column; gap: 8px;"
-  },
-  child
-);
-var Chip = ({ caption, selected = false, avatar, onClick } = {}) => {
-  const isSelected = () => typeof selected === "function" ? selected() : selected;
-  return div({
-    onclick: onClick,
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      padding: "8px 16px",
-      borderRadius: "20px",
-      cursor: "pointer",
-      fontSize: "14px",
-      fontWeight: "500",
-      transition: "all 0.2s ease",
-      backgroundColor: () => isSelected() ? "var(--background-color)" : "transparent",
-      color: () => isSelected() ? "var(--selected-color)" : "var(--background-color)",
-      outline: "none"
-    }
-  }, [
-    avatar ? div({ style: "width: 18px; height: 18px;" }, avatar) : null,
-    span(caption),
-    () => isSelected() ? span({ style: "font-size: 14px;" }, "\u2713") : null
-  ]);
-};
-
-// src/material/containers.js
-var { htmlElements: htmlElements2 } = XJS;
-var { div: div2, span: span2 } = htmlElements2;
-var ListView = (items = [], itemBuilder, { scrollDirection = "vertical", separated = false, gap = "0px" } = {}) => {
+var ListView = (items = [], { itemBuilder, scrollDirection = "vertical", separated = false, gap = "0px" } = {}) => {
   const isHorizontal = scrollDirection === "horizontal";
-  return div2(
+  return div(
     {
       style: {
         display: "flex",
@@ -503,23 +466,23 @@ var ListView = (items = [], itemBuilder, { scrollDirection = "vertical", separat
         "::-webkit-scrollbar": { display: "none" }
       }
     },
-    () => items.map((item, index) => {
+    itemBuilder ? () => items.map((item, index) => {
       const isLast = index === items.length - 1;
-      return div2(
+      return div(
         { style: isHorizontal ? "flex-shrink: 0;" : "width: 100%;" },
         [
-          itemBuilder?.(item, index),
+          itemBuilder == null ? void 0 : itemBuilder(item, index),
           // Conditional Divider logic
-          separated && !isLast ? div2({
+          separated && !isLast ? div({
             style: isHorizontal ? "height: 80%; width: 1px; background: var(--selected-color); margin: auto 8px;" : "margin-left: 16px; border-bottom: 1px solid var(--selected-color);"
           }) : null
         ]
       );
-    })
+    }) : items
   );
 };
 var ListTile = ({ leading, title, subtitle, trailing, onClick } = {}) => {
-  return div2(
+  return div(
     {
       onclick: onClick,
       style: {
@@ -536,35 +499,41 @@ var ListTile = ({ leading, title, subtitle, trailing, onClick } = {}) => {
     },
     [
       // Leading Icon/Avatar
-      leading ? div2({ style: "color: var(--foreground-colo);" }, leading) : null,
+      leading ? div({ style: "color: var(--foreground-colo);" }, leading) : null,
       // Text Content
-      div2({ style: "flex: 1; display: flex; flex-direction: column;" }, [
-        span2({ style: "font-size: 16px; color: var(--foreground-colo);" }, title),
-        subtitle ? span2({ style: "font-size: 14px; color: var(--foreground-colo);" }, subtitle) : null
+      div({ style: "flex: 1; display: flex; flex-direction: column;" }, [
+        span({ style: "font-size: 16px; color: var(--foreground-colo);" }, title),
+        subtitle ? span({ style: "font-size: 14px; color: var(--foreground-colo);" }, subtitle) : null
       ]),
       // Trailing Action/Meta
-      trailing ? div2({ style: "color: var(--foreground-colo);" }, trailing) : null
+      trailing ? div({ style: "color: var(--foreground-colo);" }, trailing) : null
     ]
   );
 };
-var GridView = (items, itemBuilder, { crossAxisCount = 2, mainAxisSpacing = "16px", crossAxisSpacing = "16px", padding = "0px" } = {}) => {
-  return div2(
+var GridView = (items, { itemBuilder, crossAxisCount = 1, mainAxisSpacing = "16px", crossAxisSpacing = "16px", height = "auto" } = {}) => {
+  return div(
     {
       style: {
         display: "grid",
         gridTemplateColumns: `repeat(${crossAxisCount}, 1fr)`,
         columnGap: crossAxisSpacing,
         rowGap: mainAxisSpacing,
-        padding,
+        padding: "auto",
         width: "100%",
+        height,
         boxSizing: "border-box",
-        overflowY: "auto"
+        overflowY: "auto",
+        flex: 1
       }
     },
-    () => items.map((item, index) => itemBuilder(item, index))
+    itemBuilder ? () => items.map((item, index) => itemBuilder(item, index)) : items
   );
 };
-var Container = (child, { width, height, padding, margin, color, decoration = {}, alignment } = {}) => {
+
+// src/material/containers.js
+var { htmlElements: htmlElements2 } = XJS;
+var { div: div2, span: span2 } = htmlElements2;
+var Container = (child, { width, height, padding, margin, color, decoration, alignment } = {}) => {
   return div2(
     {
       style: {
@@ -574,9 +543,9 @@ var Container = (child, { width, height, padding, margin, color, decoration = {}
         margin: margin || "0",
         backgroundColor: color || "transparent",
         // Decoration logic (Borders, Corners, Shadows)
-        borderRadius: decoration.borderRadius || "0",
-        border: decoration.border || "none",
-        boxShadow: decoration.boxShadow || "none",
+        borderRadius: (decoration == null ? void 0 : decoration.borderRadius) || "0",
+        border: (decoration == null ? void 0 : decoration.border) || "none",
+        boxShadow: (decoration == null ? void 0 : decoration.boxShadow) || "none",
         // Alignment logic
         display: alignment ? "flex" : "block",
         alignItems: alignment === "center" ? "center" : "stretch",
@@ -588,476 +557,108 @@ var Container = (child, { width, height, padding, margin, color, decoration = {}
     child
   );
 };
-var Flex = (child, { direction = "row", mainAxisAlignment = "flex-start", crossAxisAlignment = "flex-start", gap = "0px", flex = "none" } = {}) => {
+var Flex = (child, { direction = "column", justifyContent = "flex-start", alignItems = "flex-start", gap = "0px", flex = "1" } = {}) => {
   return div2({
     style: {
       display: "flex",
       flexDirection: direction,
-      justifyContent: mainAxisAlignment,
-      alignItems: crossAxisAlignment,
+      justifyContent,
+      alignItems,
       gap,
       flex,
-      width: direction === "row" ? "100%" : "auto",
-      height: direction === "column" ? "100%" : "auto",
+      width: direction === "row" ? "100" : "inherit",
+      height: direction === "column" ? "100%" : "inherit",
       boxSizing: "border-box"
     }
   }, child);
 };
-var SizedBox = (child, { width, height } = {}) => {
-  div2({
+var SizedBox = (child, { width = "auto", height = "auto" } = {}) => {
+  return div2({
     style: {
-      width: width ? `${width}px` : "auto",
-      height: height ? `${height}px` : "auto",
+      width,
+      height,
       display: child ? "inline-block" : "block"
     }
   }, child || "");
 };
-var Placeholder = ({ color = "var(--foreground-colo)", fallbackHeight = "100px" } = {}) => {
+var Placeholder = ({ color = "var(--selected-color)", fallbackHeight = "inherit", fallbackWidth = "inherit" } = {}) => {
+  const lineStyle = {
+    position: "absolute",
+    width: "150%",
+    height: "2px",
+    background: color,
+    top: "50%",
+    left: "-25%",
+    transform: "rotate(45deg)"
+  };
   return div2({
     style: {
-      width: "100%",
+      width: fallbackWidth,
       height: fallbackHeight,
       border: `2px solid ${color}`,
       position: "relative",
-      backgroundColor: "rgba(0,0,0,0.05)",
+      backgroundColor: "rgba(0, 0, 0, 0.05)",
       overflow: "hidden"
     }
   }, [
     // The "X" lines
-    div2({ style: `position: absolute; width: 150%; height: 2px; background: ${color}; top: 50%; left: -25%; transform: rotate(45deg);` }),
-    div2({ style: `position: absolute; width: 150%; height: 2px; background: ${color}; top: 50%; left: -25%; transform: rotate(-45deg);` })
+    div2({ style: __spreadProps(__spreadValues({}, lineStyle), { transform: "rotate(45deg)" }) }),
+    div2({ style: __spreadProps(__spreadValues({}, lineStyle), { transform: "rotate(-45deg)" }) })
   ]);
 };
-var Column = (child, { mainAxisAlignment = "start", crossAxisAlignment = "stretch" } = {}) => Flex(child, {
+var Column = (child, { mainAxisAlignment = "start", crossAxisAlignment = "stretch", reverse = false, gap = "0px" } = {}) => Flex(child, {
+  gap,
   mainAxisAlignment,
   crossAxisAlignment,
-  direction: "column"
+  direction: reverse ? "column-reverse" : "column"
 });
-var Row = (child, { mainAxisAlignment = "start" } = {}) => Flex(child, {
+var Row = (child, { mainAxisAlignment = "start", reverse = false } = {}) => Flex(child, {
   mainAxisAlignment,
-  direction: "row"
+  direction: reverse ? "row-reverse" : "row"
 });
-
-// src/material/navigations.js
-var { htmlElements: htmlElements3, createSignal: createSignal2 } = XJS;
-var { div: div3, aside, span: span3, button: button2, nav, hr, footer: footer2 } = htmlElements3;
-var AppBar = ({ leading = null, title, actions = [] } = {}) => {
-  return div3(
-    {
-      style: {
-        height: "64px",
-        display: "flex",
-        alignItems: "center",
-        padding: "0 16px",
-        borderBottom: "1px solid var(--selected-color)",
-        justifyContent: "space-between"
-      }
-    },
-    // 1. Leading Section
-    div3({ style: "display: flex; alignItems: center;" }, leading),
-    // 2. Title Section
-    span3({ style: "font-size: 22px; font-weight: 400;" }, title),
-    // 3. Actions Section
-    div3({ style: "display: flex; alignItems: center;" }, actions)
-  );
-};
-var TabBar = (tabs, { selected } = {}) => {
-  if (!selected) return null;
-  return div3(
-    {
-      style: {
-        position: "fixed",
-        bottom: "0",
-        display: "flex",
-        width: "100%",
-        //border: '1px solid var(--selected-color)',
-        height: "6rem",
-        maxWidth: "48rem"
-      }
-    },
-    tabs.map((tab, index) => {
-      const isSelected = () => selected.value === index;
-      const label2 = typeof tab === "string" ? tab : tab.label;
-      const icon = tab.icon || null;
-      return div3(
-        {
-          onclick: () => tab.onclick(index),
-          style: {
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            position: "relative",
-            transition: "color 0.2s ease",
-            fontWeight: () => isSelected() ? "600" : "400"
-          }
-        },
-        // Optional Icon
-        icon ? span3({ style: "font-size: 18px;" }, icon) : null,
-        // Label
-        span3({
-          style: {
-            fontSize: "1.5rem"
-          }
-        }, label2),
-        // Active Indicator (The Material Underline)
-        () => isSelected() ? div3({
-          style: {
-            position: "absolute",
-            bottom: 0,
-            width: "50%",
-            // M3 tabs usually have a shorter indicator than the full width
-            height: "1rem",
-            borderRadius: "3px 3px 0 0",
-            borderBottom: () => isSelected() ? "2px solid var(--primary-color)" : "none"
-          }
-        }) : null
-      );
-    })
-  );
-};
-var Sidebar = (child, { side = "left", isOpen } = {}) => {
-  const isVertical = side === "left" || side === "right";
-  return [
-    div3({
-      style: {
-        position: "fixed",
-        zIndex: 4e3,
-        backgroundColor: "var(--background-color)",
-        boxShadow: "0 8px 10px rgba(0,0,0,0.15)",
-        transition: "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-        // Dimensions based on orientation
-        width: isVertical ? "300px" : "100%",
-        height: isVertical ? "100%" : "auto",
-        maxHeight: isVertical ? "100%" : "80vh",
-        // Positioning logic
-        top: side === "bottom" ? "auto" : "0",
-        bottom: side === "top" ? "auto" : "0",
-        left: side === "right" ? "auto" : "0",
-        right: side === "left" ? "auto" : "0",
-        // Reactivity: Slide direction
-        transform: () => {
-          if (isOpen.value) return "translate(0, 0)";
-          const map = {
-            left: "translateX(-100%)",
-            right: "translateX(100%)",
-            top: "translateY(-100%)",
-            bottom: "translateY(100%)"
-          };
-          return map[side];
-        },
-        // Material 3 styling
-        borderRadius: () => {
-          if (side === "left") return "0 16px 16px 0";
-          if (side === "right") return "16px 0 0 16px";
-          if (side === "top") return "0 0 16px 16px";
-          return "16px 16px 0 0";
-        }
-      }
-    }, child),
-    div3({
-      onclick: () => {
-        isOpen.value = false;
-      },
-      style: {
-        position: "fixed",
-        inset: "0",
-        backgroundColor: "var(--selected-color)",
-        zIndex: 3999,
-        // Reactivity
-        opacity: () => isOpen.value ? "1" : "0",
-        pointerEvents: () => isOpen.value ? "auto" : "none",
-        transition: "opacity 0.5s ease"
-      }
-    })
-  ];
-};
-var Pagination = ({ total, current, onPageChange } = {}) => {
-  const pages = Array.from({ length: total }, (_, i) => i + 1), btnStyle = {
-    color: "var(--foreground-color)",
-    cursor: "pointer",
-    width: "40px",
-    border: "none",
-    height: "40px"
-  };
-  return nav(
-    {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        justifyContent: "center",
-        padding: "20px"
-      }
-    },
-    button2({
-      onclick: () => onPageChange(current.value - 1),
-      disabled: () => current.value === 1,
-      style: btnStyle
-    }, "<"),
-    ...pages.map((page) => button2({
-      onclick: () => onPageChange(page),
-      style: {
-        ...btnStyle,
-        borderRadius: "20px",
-        backgroundColor: () => current.value === page ? "var(--selected-color)" : "transparent"
-      }
-    }, page)),
-    button2({
-      onclick: () => onPageChange(current.value + 1),
-      disabled: () => current.value === total,
-      style: btnStyle
-    }, ">")
-  );
-};
-var Breadcrumbs = ({ paths } = {}) => {
-  return nav(
-    {
-      style: {
-        display: "flex",
-        gap: "8px",
-        fontSize: "14px",
-        color: "var(--selected - color)",
-        padding: "12px 0"
-      }
-    },
-    paths.map((path2, index) => [
-      span3({
-        onclick: path2.onclick,
-        style: {
-          cursor: "pointer",
-          color: "var(--foreground-color)",
-          fontWeight: "500"
-        }
-      }, path2.label),
-      index < paths.length - 1 ? span3({ style: "color: var(--foreground-color);" }, "/") : null
-    ])
-  );
-};
-var NavigationRail = (destinations = [], { selecetd, navigationHeader } = {}) => {
-  return aside(
-    {
-      style: {
-        // width: '80px',
-        height: "100%",
-        backgroundColor: "var(--background-color)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "12px 0",
-        gap: "20px",
-        borderRight: "1px solid var(--selected-color)"
-      }
-    },
-    navigationHeader,
-    destinations.map((dest, i) => div3(
-      {
-        onclick: dest.onclick,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          cursor: "pointer",
-          gap: "4px",
-          borderBottom: () => selecetd.value == i ? "2px solid var(--primary-color)" : "none"
-        }
-      },
-      dest.icon ? div3({
-        style: {
-          width: "56px",
-          height: "32px",
-          borderRadius: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "background 0.2s"
-        }
-      }, dest.icon) : null,
-      span3({
-        style: {
-          fontSize: "12px",
-          fontWeight: "500",
-          padding: "0 5px"
-        }
-      }, dest.label)
-    ))
-  );
-};
-var BottomAppBar = ({ actions = [], fab } = {}) => {
-  return footer2({
+var Card = (child, { onClick } = {}) => div2(
+  {
+    onclick: onClick,
+    style: "background: var(--background-color); border-radius: 12px; padding: 16px; border: 1px solid #CAC4D0; display: flex; flex-direction: column; gap: 8px;"
+  },
+  child
+);
+var Chip = ({ caption, selected = false, avatar, onClick } = {}) => {
+  const isSelected = () => typeof selected === "function" ? selected() : selected;
+  return div2({
+    onclick: onClick,
     style: {
-      height: "80px",
       display: "flex",
       alignItems: "center",
-      padding: "0 16px",
-      position: "relative",
-      borderTop: "1px solid var(--selected-color)"
-    }
-  }, [
-    div3({ style: "display: flex; gap: 24px; flex: 1;" }, actions),
-    fab ? div3({ style: "position: absolute; right: 16px; top: -28px;" }, fab) : null
-  ]);
-};
-var PopupMenu = (items, { icon } = {}) => {
-  const isOpened2 = createSignal2(false), handleOutsideClick = (e) => {
-    if (isOpened2.value) {
-      isOpened2.value = false;
-      window.removeEventListener("click", handleOutsideClick);
-    }
-  };
-  const toggleMenu = (e) => {
-    e.stopPropagation();
-    isOpened2.value = !isOpened2.value;
-    if (isOpened2.value) {
-      window.addEventListener("click", handleOutsideClick);
-    }
-  };
-  return div3({ style: "position: relative; display: inline-block;" }, [
-    // The Trigger
-    div3({
-      onclick: toggleMenu,
-      style: "cursor: pointer; padding: 8px; border-radius: 50%; display: flex;"
-    }, icon),
-    // The Menu Overlay
-    () => isOpened2.value ? div3({
-      style: {
-        position: "absolute",
-        top: "100%",
-        right: "0",
-        backgroundColor: "var(--background-color)",
-        minWidth: "150px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
-        borderRadius: "4px",
-        padding: "8px 0",
-        zIndex: 1e3,
-        display: "flex",
-        flexDirection: "column"
-      }
-    }, items.map((item) => div3({
-      onclick: () => {
-        item.onclick();
-        isOpened2.value = false;
-      },
-      className: "hover",
-      style: {
-        padding: "12px 16px",
-        fontSize: "14px",
-        cursor: "pointer",
-        color: "var(--foreground-color)",
-        transition: "background 0.2s"
-      }
-    }, item.label))) : null
-  ]);
-};
-var NavigationDestination = ({ icon, caption, selected, onclick } = {}) => {
-  return div3({
-    onclick,
-    style: {
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: "4px",
+      gap: "8px",
+      padding: "8px 16px",
+      borderRadius: "20px",
       cursor: "pointer",
-      height: "100%"
+      fontSize: "14px",
+      fontWeight: "500",
+      transition: "all 0.2s ease",
+      backgroundColor: () => isSelected() ? "var(--background-color)" : "transparent",
+      color: () => isSelected() ? "var(--selected-color)" : "var(--background-color)",
+      outline: "none"
     }
   }, [
-    // The Active Indicator Pill
-    div3({
-      style: {
-        width: "64px",
-        height: "32px",
-        borderRadius: "16px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        transition: "background-color 0.2s ease",
-        // Only this property re-renders when selected() updates
-        backgroundColor: () => selected() ? "var(--selected-color)" : "transparent"
-      }
-    }, icon),
-    // Label
-    span3({
-      style: {
-        fontSize: "12px",
-        fontWeight: () => selected() ? "700" : "500",
-        transition: "all 0.2s"
-      }
-    }, caption)
+    avatar ? div2({ style: "width: 18px; height: 18px;" }, avatar) : null,
+    span2(caption),
+    () => isSelected() ? span2({ style: "font-size: 14px;" }, "\u2713") : null
   ]);
-};
-var NavigationBar = ({ destinations = [] } = {}) => {
-  return div3({
-    style: {
-      height: "80px",
-      display: "flex",
-      borderTop: "1px solid rgba(0,0,0,0.05)",
-      paddingBottom: "env(safe-area-inset-bottom)",
-      width: "100%",
-      boxSizing: "border-box"
-    }
-  }, destinations);
-};
-var ContextMenu = (Opener, Items = [], { clientX = 0, clientY = 0 } = {}) => {
-  const isOpened2 = createSignal2(false), showContextMenu = (event) => {
-    event.preventDefault();
-    clientX = event.clientX;
-    clientY = event.clientY;
-    isOpened2.value = true;
-  }, MenuItems = div3({
-    onclick: () => isOpened2.value = false,
-    style: "position: fixed; inset: 0; z-index: 3000;"
-  }, [
-    div3({
-      style: {
-        position: "absolute",
-        left: `${clientX}px`,
-        top: `${clientY}px`,
-        backgroundColor: "var(--background-color)",
-        borderRadius: "4px",
-        boxShadow: "0 2px 8px var(--selected-color)",
-        padding: "8px 0",
-        minWidth: "112px"
-      }
-    }, Items.map((item) => div3({
-      onclick: () => {
-        item.onclick();
-        isOpened2.value = false;
-      },
-      style: "padding: 12px 16px; cursor: pointer; font-size: 14px; transition: background 0.2s;"
-    }, item.label)))
-  ]);
-  return div3(
-    {
-      style: "padding: 8px 0;"
-    },
-    [div3({ onclick: (e) => showContextMenu(e) }, Opener), MenuItems]
-  );
-};
-var Menu = (items = [], { title, onItemClick } = {}) => {
-  return [
-    div3({ style: "padding: 16px; font-weight: 600;" }, title),
-    hr(),
-    items.map((item) => div3({
-      onclick: (e) => onItemClick({ e, item }),
-      style: "padding: 12px 16px; border-radius: 100px; cursor: pointer; margin: 4px 0;"
-    }, item.label))
-  ];
 };
 
 // src/material/inputs.js
-var { htmlElements: htmlElements4 } = XJS;
-var { form, div: div4, label, input, span: span4, button: button3, img: img2 } = htmlElements4;
+var { htmlElements: htmlElements3 } = XJS;
+var { form, div: div3, label, input, span: span3, button: button2, img: img2 } = htmlElements3;
 var Form = ({ fields, onSubmit, onValidate } = {}) => {
   return form({
     onsubmit: (e) => {
+      var _a;
       e.preventDefault();
       const formData = new FormData(e.target);
       const payload = Object.fromEntries(formData);
-      let isValid = onValidate?.({ e, formData, payload }) ?? true;
+      let isValid = (_a = onValidate == null ? void 0 : onValidate({ e, formData, payload })) != null ? _a : true;
       if (isValid) onSubmit({ e, formData, payload });
     },
     style: "display: flex; flex-direction: column; gap: 20px; width: 100%;"
@@ -1065,7 +666,7 @@ var Form = ({ fields, onSubmit, onValidate } = {}) => {
 };
 var InputField = ({ controller, caption, type = "text", hint = "", obscureText = false, validate } = {}) => {
   const isFocused = signal.isFocused(false), inputType = obscureText ? "password" : type;
-  return div4(
+  return div3(
     {
       style: {
         display: "flex",
@@ -1154,7 +755,7 @@ var Button = (caption, { variant = "Filled", icon = null, onclick, disabled = fa
     }
   };
   const current = variants[variant];
-  return button3({
+  return button2({
     onclick,
     disabled,
     style: {
@@ -1177,17 +778,29 @@ var Button = (caption, { variant = "Filled", icon = null, onclick, disabled = fa
     }
   }, [
     icon,
-    caption ? span4(caption) : null
+    caption ? span3(caption) : null
   ]);
 };
-var FloatingButton = (title, { onclick } = {}) => {
-  return div4({
+var ActionButton = (child, { onClick }) => {
+  return button2({
+    onclick: onClick,
     style: {
       position: "fixed",
-      bottom: "16px",
-      right: "16px"
+      width: "40px",
+      height: "40px",
+      borderRadius: "50%",
+      border: "none",
+      background: "rgba(0,0,0,0.05)",
+      // Subtle grey circle
+      cursor: "pointer",
+      fontSize: "20px",
+      display: "grid",
+      placeItems: "center"
     }
-  }, button3({
+  }, child);
+};
+var FloatingButton = (title, { onclick } = {}) => {
+  return button2({
     style: {
       width: "56px",
       height: "56px",
@@ -1199,10 +812,10 @@ var FloatingButton = (title, { onclick } = {}) => {
       cursor: "pointer"
     },
     onclick
-  }, title));
+  }, title);
 };
 var IconButton = (icon, { caption, onClick, color } = {}) => {
-  return button3({
+  return button2({
     onclick: onClick,
     style: {
       width: "40px",
@@ -1225,7 +838,7 @@ var IconButton = (icon, { caption, onClick, color } = {}) => {
 };
 var Switch = ({ controller } = {}) => {
   const toggle = () => controller.value = !controller.value;
-  return div4(
+  return div3(
     {
       onclick: toggle,
       style: {
@@ -1238,7 +851,7 @@ var Switch = ({ controller } = {}) => {
         cursor: "pointer"
       }
     },
-    div4({
+    div3({
       style: {
         width: "26px",
         height: "26px",
@@ -1255,13 +868,13 @@ var Switch = ({ controller } = {}) => {
 };
 var Checkbox = (caption, { controller } = {}) => {
   const toggle = () => controller.value = !controller.value;
-  return div4(
+  return div3(
     {
       onclick: toggle,
       style: "display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 0;"
     },
     // The Square Box
-    div4(
+    div3(
       {
         style: {
           width: "18px",
@@ -1276,20 +889,20 @@ var Checkbox = (caption, { controller } = {}) => {
         }
       },
       // The Checkmark
-      () => controller.value ? span4({ style: "color: white; font-size: 14px; font-weight: bold;" }, "\u2713") : null
+      () => controller.value ? span3({ style: "color: white; font-size: 14px; font-weight: bold;" }, "\u2713") : null
     ),
-    span4({ style: { fontSize: "16px" } }, caption)
+    span3({ style: { fontSize: "16px" } }, caption)
   );
 };
 var Radio = (caption, { controller, value } = {}) => {
   const isSelected = () => controller.value === value;
-  return div4(
+  return div3(
     {
       onclick: () => controller.value = value,
       style: "display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 0;"
     },
     // The Outer Circle
-    div4(
+    div3(
       {
         style: {
           width: "20px",
@@ -1303,7 +916,7 @@ var Radio = (caption, { controller, value } = {}) => {
         }
       },
       // The Inner Dot
-      () => isSelected() ? div4({
+      () => isSelected() ? div3({
         style: {
           width: "10px",
           height: "10px",
@@ -1312,11 +925,11 @@ var Radio = (caption, { controller, value } = {}) => {
         }
       }) : null
     ),
-    span4({ style: { fontSize: "16px" } }, caption)
+    span3({ style: { fontSize: "16px" } }, caption)
   );
 };
 var Slider = ({ controller, min = 0, max = 100 } = {}) => {
-  return div4(
+  return div3(
     { style: "width: 100%; padding: 12px 0; display: flex; align-items: center;" },
     input({
       type: "range",
@@ -1338,7 +951,7 @@ var Slider = ({ controller, min = 0, max = 100 } = {}) => {
       }
     }),
     // Value Label (Optional)
-    span4(
+    span3(
       { style: "margin-left: 12px; min-width: 30px; font-family: monospace;" },
       () => controller.value
     )
@@ -1346,9 +959,9 @@ var Slider = ({ controller, min = 0, max = 100 } = {}) => {
 };
 var Picker = ({ controller, caption, type } = {}) => {
   const isFocused = signal.isFocused;
-  return div4(
+  return div3(
     { style: "position: relative; margin: 16px 0; width: 100%;" },
-    span4({
+    span3({
       style: {
         fontSize: "12px",
         color: isFocused.value ? "var(--background-color)" : "var(--selected-color)",
@@ -1379,18 +992,8 @@ var Picker = ({ controller, caption, type } = {}) => {
     })
   );
 };
-var DatePicker = (props) => Picker({ ...props, type: "date" });
-var TimePicker = (props) => Picker({ ...props, type: "time" });
-var Text = (value, { fontSize, color, fontWeight, fontFamily } = {}) => {
-  span4({
-    style: {
-      fontSize: fontSize || "14px",
-      color: color || "inherit",
-      fontWeight: fontWeight || "normal",
-      fontFamily: fontFamily || "sans-serif"
-    }
-  }, value);
-};
+var DatePicker = (props) => Picker(__spreadProps(__spreadValues({}, props), { type: "date" }));
+var TimePicker = (props) => Picker(__spreadProps(__spreadValues({}, props), { type: "time" }));
 var Image = (imageSrc, { width, height, fit = "cover" } = {}) => {
   return img2({
     src: imageSrc,
@@ -1398,31 +1001,694 @@ var Image = (imageSrc, { width, height, fit = "cover" } = {}) => {
   });
 };
 var Logo = (child, { onClick } = {}) => {
-  return div4({
+  return div3({
     style: {
       alignItems: "center",
       justifyContent: "center",
       textAlign: "center",
-      padding: "0 10px",
-      // width: "56px",
+      padding: "0 15px",
+      minWidth: "28px",
       height: "56px",
       borderRadius: "5px",
       border: "none",
       fontSize: "4rem",
       fontWeight: "bold",
       cursor: "pointer",
-      background: "var(--primary-color)",
-      color: "var(--background-color)"
+      background: "var(--primary-color)"
     },
     onclick: onClick
   }, child);
 };
 
-// src/material/selectors.js
-var { htmlElements: htmlElements5 } = XJS;
-var { div: div5, span: span5, button: button4 } = htmlElements5;
-var SingleSelector = (options = [], { selected } = {}) => {
+// src/material/styles.js
+var { htmlElements: htmlElements4, createSignal: createSignal2 } = XJS;
+var { div: div4, hr, bold, span: span4, button: button3 } = htmlElements4;
+var Text = (content, { fontSize, color, fontWeight, fontFamily } = {}) => {
+  return span4({
+    style: {
+      fontSize: fontSize || "inherit",
+      color: color || "inherit",
+      fontWeight: fontWeight || "inherit",
+      fontFamily: fontFamily || "inherit"
+    }
+  }, content);
+};
+var Heading = (child, { variant = "h3", fontSize } = {}) => {
+  return htmlElements4[variant]({
+    style: {
+      padding: "5px 16px",
+      fontSize
+    }
+  }, child);
+};
+var Center = (child) => {
+  return div4({
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
+      width: "100%",
+      height: "100%",
+      flex: "1"
+      // Take up available space in Flex parents
+    }
+  }, child);
+};
+var Border = (child, { side = "all", border = "1px solid var(--selected-color)", radius = "0px" } = {}) => {
+  const borderStyle = {
+    borderRadius: radius,
+    overflow: "hidden",
+    // Ensures child content doesn't bleed over corners
+    display: "inline-block",
+    width: "100%",
+    boxSizing: "border-box"
+  };
+  borderStyle["border" + (side == "all" ? "" : "-" + side)] = border;
+  return div4({
+    style: borderStyle
+  }, child);
+};
+var Margin = (child, { side = "all", margin = "0px" } = {}) => {
+  const marginStyle = {
+    display: "block",
+    // Ensures margin is respected in the flow
+    boxSizing: "border-box"
+  };
+  marginStyle["margin" + (side == "all" ? "" : "-" + side)] = margin;
+  return div4({
+    style: marginStyle
+  }, child);
+};
+var Padding = (child, { side = "all", padding = "0px" } = {}) => {
+  const paddingStyle = {
+    display: "inline-block",
+    // Wraps tightly around child
+    width: "100%",
+    boxSizing: "border-box"
+  };
+  paddingStyle["padding" + (side == "all" ? "" : "-" + side)] = padding;
+  return div4({
+    style: paddingStyle
+  }, child);
+};
+var Transform = (child, { transform = "", origin = "center" } = {}) => {
+  return div4({
+    style: {
+      display: "inline-block",
+      transform: () => (transform == null ? void 0 : transform.isSignal) ? transform.value : transform,
+      transformOrigin: origin,
+      transition: "transform 0.2s ease-out"
+    }
+  }, child);
+};
+var Opacity = (child, { opacity = 1 } = {}) => {
+  return div4({
+    style: {
+      opacity: () => (opacity == null ? void 0 : opacity.isSignal) ? opacity.value : opacity,
+      transition: "opacity 0.2s linear",
+      pointerEvents: ((opacity == null ? void 0 : opacity.isSignal) ? opacity.value : opacity) < 0.1 ? "none" : "auto"
+    }
+  }, child);
+};
+var Align = (child, { alignment = "center" } = {}) => {
+  const map = {
+    "top-left": { x: "flex-start", y: "flex-start" },
+    "top-center": { x: "center", y: "flex-start" },
+    "top-right": { x: "flex-end", y: "flex-start" },
+    "center": { x: "center", y: "center" },
+    "bottom-left": { x: "flex-start", y: "flex-end" },
+    "bottom-center": { x: "center", y: "flex-end" },
+    "bottom-right": { x: "flex-end", y: "flex-end" }
+  };
+  const pos = map[alignment] || map.center;
+  return div4({
+    style: {
+      display: "flex",
+      justifyContent: pos.x,
+      alignItems: pos.y
+    }
+  }, child);
+};
+var Expanded = (child, { flex = 1 } = {}) => {
+  return div4({
+    style: {
+      flex,
+      display: "flex",
+      flexDirection: "column"
+    }
+  }, child);
+};
+var Marker = ({ width = "100%", height = "1px", color = "var(--primary-color)" } = {}) => {
+  return div4({
+    style: {
+      width,
+      height,
+      background: color,
+      borderRadius: "2px",
+      alignSelf: "center"
+    }
+  });
+};
+var Divider = ({ indent = "0px" } = {}) => {
+  return hr({
+    style: `margin: 0; margin-left: ${indent}; border: 0; border-top: 1px solid var(--selected-color);`
+  });
+};
+var Bold = (child, { fontSize = "25px" } = {}) => {
+  return bold({
+    style: {
+      fontSize
+    }
+  }, child);
+};
+var Movable = (child, { initialX = window.innerWidth, initialY = window.innerHeight } = {}) => {
+  const isMoving = createSignal2(false), x = createSignal2(initialX), y = createSignal2(initialY);
+  let offset = { x: 0, y: 0 };
+  const onPointerDown = (e) => {
+    isMoving.value = true;
+    offset.x = e.clientX - x.value;
+    offset.y = e.clientY - y.value;
+    e.target.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e) => {
+    if (!isMoving.value) return;
+    x.value = e.clientX - offset.x;
+    y.value = e.clientY - offset.y;
+  };
+  const onPointerUp = (e) => {
+    isMoving.value = false;
+    e.target.releasePointerCapture(e.pointerId);
+  };
+  return div4({
+    onpointerdown: onPointerDown,
+    onpointermove: onPointerMove,
+    onpointerup: onPointerUp,
+    style: {
+      position: "fixed",
+      cursor: () => isMoving.value ? "grabbing" : "grab",
+      // Reactive coordinates
+      left: () => `${x.value}px`,
+      top: () => `${y.value}px`,
+      // Visual feedback
+      touchAction: "none",
+      // Prevents scrolling while moving on mobile
+      transition: () => isMoving.value ? "none" : "transform 0.1s ease",
+      boxShadow: () => isMoving.value ? "0 12px 24px rgba(0,0,0,0.2)" : "0 4px 8px rgba(0,0,0,0.1)",
+      transform: () => isMoving.value ? "scale(1.02)" : "scale(1)"
+    }
+  }, child);
+};
+var Position = (child, {
+  top = "auto",
+  right = "auto",
+  bottom = "auto",
+  left = "auto",
+  width = "auto",
+  height = "auto",
+  zIndex = 1e3
+} = {}) => {
+  return div4({
+    style: {
+      position: "absolute",
+      top,
+      right,
+      bottom,
+      left,
+      width,
+      height,
+      zIndex
+    }
+  }, child);
+};
+
+// src/material/navigations.js
+var { htmlElements: htmlElements5, createSignal: createSignal3 } = XJS;
+var { div: div5, aside, span: span5, button: button4, nav, hr: hr2, footer: footer2, a } = htmlElements5;
+var AppBar = ({ leading = null, title, actions = [] } = {}) => {
   return div5(
+    {
+      style: {
+        height: "64px",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 16px",
+        borderBottom: "1px solid var(--outline-color)",
+        justifyContent: "space-between"
+      }
+    },
+    // 1. Leading Section
+    div5({ style: "display: flex; alignItems: center;" }, leading),
+    // 2. Title Section
+    span5({ style: "font-size: 22px; font-weight: 400;" }, title),
+    // 3. Actions Section
+    div5({ style: "display: flex; alignItems: center;" }, actions)
+  );
+};
+var TabBar = (tabs, { selected, position = "top" } = {}) => {
+  if (!selected) return null;
+  return div5({
+    style: {
+      // position:"fixed",
+      display: "flex",
+      width: "100%",
+      height: "5rem",
+      zIndex: 10,
+      // Ensures it stays above content
+      flexShrink: 0,
+      // Prevents header from squishing
+      borderBottom: position === "top" ? "1px solid var(--outline-color)" : "none",
+      borderTop: position === "bottom" ? "1px solid var(--outline-color)" : "none"
+    }
+  }, tabs.map((tab, index) => {
+    const isSelected = () => selected.value === index;
+    const label2 = typeof tab === "string" ? tab : tab.label;
+    const icon = tab.icon || null;
+    return div5({
+      onclick: () => selected.value = index,
+      style: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        position: "relative",
+        gap: "4px"
+      }
+    }, [
+      icon ? span5({ style: { fontSize: "18px" } }, icon) : null,
+      span5({
+        style: {
+          fontSize: "1.4rem",
+          // fontWeight: () => isSelected() ? '600' : '400',
+          borderRadius: "80px",
+          padding: "10px 25px",
+          backgroundColor: () => isSelected() ? "var(--outline-color)" : "transparent",
+          transition: "background 0.5s"
+        }
+      }, label2)
+    ]);
+  }));
+};
+var Sidebar = (child, { side = "left", isOpen } = {}) => {
+  const isVertical = side === "left" || side === "right";
+  return [
+    div5(
+      {
+        style: {
+          position: "fixed",
+          zIndex: 1e3,
+          backgroundColor: "var(--background-color)",
+          boxShadow: "0 8px 10px rgba(0,0,0,0.15)",
+          transition: "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+          overflowY: "auto",
+          // Dimensions based on orientation
+          width: isVertical ? "300px" : "100%",
+          height: isVertical ? "100%" : "auto",
+          maxHeight: isVertical ? "100%" : "80vh",
+          // Positioning logic
+          top: side === "bottom" ? "auto" : "0",
+          bottom: side === "top" ? "auto" : "0",
+          left: side === "right" ? "auto" : "0",
+          right: side === "left" ? "auto" : "0",
+          // Reactivity: Slide direction
+          transform: () => {
+            if (isOpen.value) return "translate(0, 0)";
+            const map = {
+              left: "translateX(-100%)",
+              right: "translateX(100%)",
+              top: "translateY(-100%)",
+              bottom: "translateY(100%)"
+            };
+            return map[side];
+          },
+          // Material 3 styling
+          borderRadius: () => {
+            if (side === "left") return "0 16px 16px 0";
+            if (side === "right") return "16px 0 0 16px";
+            if (side === "top") return "0 0 16px 16px";
+            return "16px 16px 0 0";
+          }
+        }
+      },
+      Position(
+        ActionButton("\u2715", { onClick: () => isOpen.value = false }),
+        {
+          right: "50px",
+          top: "15px"
+        }
+      ),
+      child
+    ),
+    div5({
+      onclick: () => {
+        isOpen.value = false;
+      },
+      style: {
+        position: "fixed",
+        inset: "0",
+        backgroundColor: "var(--selected-color)",
+        zIndex: 999,
+        // Reactivity
+        opacity: () => isOpen.value ? ".6" : "0",
+        pointerEvents: () => isOpen.value ? "auto" : "none",
+        transition: "opacity 0.6s ease"
+      }
+    })
+  ];
+};
+var Pagination = ({ total, current, onPageChange } = {}) => {
+  const pages = Array.from({ length: total }, (_, i) => i + 1), btnStyle = {
+    color: "var(--foreground-color)",
+    cursor: "pointer",
+    width: "40px",
+    border: "none",
+    height: "40px"
+  };
+  return nav(
+    {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        justifyContent: "center",
+        padding: "20px"
+      }
+    },
+    button4({
+      onclick: () => onPageChange(current.value - 1),
+      disabled: () => current.value === 1,
+      style: btnStyle
+    }, "<"),
+    ...pages.map((page) => button4({
+      onclick: () => onPageChange(page),
+      style: __spreadProps(__spreadValues({}, btnStyle), {
+        borderRadius: "20px",
+        backgroundColor: () => current.value === page ? "var(--selected-color)" : "transparent"
+      })
+    }, page)),
+    button4({
+      onclick: () => onPageChange(current.value + 1),
+      disabled: () => current.value === total,
+      style: btnStyle
+    }, ">")
+  );
+};
+var Breadcrumbs = ({ paths } = {}) => {
+  return nav(
+    {
+      style: {
+        display: "flex",
+        gap: "8px",
+        fontSize: "14px",
+        color: "var(--selected - color)",
+        padding: "12px 0"
+      }
+    },
+    paths.map((path2, index) => [
+      span5({
+        onclick: path2.onclick,
+        style: {
+          cursor: "pointer",
+          color: "var(--foreground-color)",
+          fontWeight: "500"
+        }
+      }, path2.label),
+      index < paths.length - 1 ? span5({ style: "color: var(--foreground-color);" }, "/") : null
+    ])
+  );
+};
+var NavigationRail = (destinations = [], { selecetd, navigationHeader } = {}) => {
+  return aside(
+    {
+      style: {
+        // width: '80px',
+        height: "100%",
+        backgroundColor: "var(--background-color)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "12px 0",
+        gap: "20px",
+        borderRight: "1px solid var(--selected-color)"
+      }
+    },
+    navigationHeader,
+    destinations.map((dest, i) => div5(
+      {
+        onclick: dest.onclick,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          cursor: "pointer",
+          gap: "4px",
+          borderBottom: () => selecetd.value == i ? "2px solid var(--primary-color)" : "none"
+        }
+      },
+      dest.icon ? div5({
+        style: {
+          width: "56px",
+          height: "32px",
+          borderRadius: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "background 0.2s"
+        }
+      }, dest.icon) : null,
+      span5({
+        style: {
+          fontSize: "12px",
+          fontWeight: "500",
+          padding: "0 5px"
+        }
+      }, dest.label)
+    ))
+  );
+};
+var BottomAppBar = ({ actions = [], fab } = {}) => {
+  return footer2({
+    style: {
+      height: "80px",
+      display: "flex",
+      alignItems: "center",
+      padding: "0 16px",
+      position: "relative",
+      borderTop: "1px solid var(--selected-color)"
+    }
+  }, [
+    div5({ style: "display: flex; gap: 24px; flex: 1;" }, actions),
+    fab ? div5({ style: "position: absolute; right: 16px; top: -28px;" }, fab) : null
+  ]);
+};
+var PopupMenu = (items, { icon } = {}) => {
+  const isOpened2 = createSignal3(false), handleOutsideClick = (e) => {
+    if (isOpened2.value) {
+      isOpened2.value = false;
+      window.removeEventListener("click", handleOutsideClick);
+    }
+  };
+  const toggleMenu = (e) => {
+    e.stopPropagation();
+    isOpened2.value = !isOpened2.value;
+    if (isOpened2.value) {
+      window.addEventListener("click", handleOutsideClick);
+    }
+  };
+  return div5({ style: "position: relative; display: inline-block;" }, [
+    // The Trigger
+    div5({
+      onclick: toggleMenu,
+      style: "cursor: pointer; padding: 8px; border-radius: 50%; display: flex;"
+    }, icon),
+    // The Menu Overlay
+    () => isOpened2.value ? div5({
+      style: {
+        position: "absolute",
+        top: "100%",
+        right: "0",
+        backgroundColor: "var(--background-color)",
+        minWidth: "150px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
+        borderRadius: "4px",
+        padding: "8px 0",
+        zIndex: 1e3,
+        display: "flex",
+        flexDirection: "column"
+      }
+    }, items.map((item) => div5({
+      onclick: () => {
+        item.onclick();
+        isOpened2.value = false;
+      },
+      className: "hover",
+      style: {
+        padding: "12px 16px",
+        fontSize: "14px",
+        cursor: "pointer",
+        color: "var(--foreground-color)",
+        transition: "background 0.2s"
+      }
+    }, item.label))) : null
+  ]);
+};
+var NavigationDestination = ({ icon, caption, selected, onclick } = {}) => {
+  return div5({
+    onclick,
+    style: {
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "4px",
+      cursor: "pointer",
+      height: "100%"
+    }
+  }, [
+    // The Active Indicator Pill
+    div5({
+      style: {
+        width: "64px",
+        height: "32px",
+        borderRadius: "16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "background-color 0.2s ease",
+        backgroundColor: () => selected() ? "var(--outline-color)" : "transparent"
+      }
+    }, icon),
+    // Label
+    span5({
+      style: {
+        fontSize: "12px",
+        fontWeight: () => selected() ? "700" : "500",
+        transition: "all 0.2s"
+      }
+    }, caption),
+    () => selected() ? div5({
+      style: {
+        position: "absolute",
+        bottom: 0,
+        width: "20%",
+        // M3 tabs usually have a shorter indicator than the full width
+        height: "1rem",
+        borderRadius: "3px 3px 0 0",
+        borderBottom: () => selected() ? "2px solid var(--primary-color)" : "none"
+      }
+    }) : null
+  ]);
+};
+var NavigationBar = ({ destinations = [] } = {}) => {
+  return div5({
+    style: {
+      height: "5rem",
+      display: "flex",
+      borderTop: "1px solid var(--outline-color)",
+      paddingBottom: "env(safe-area-inset-bottom)",
+      width: "100%",
+      boxSizing: "border-box"
+    }
+  }, destinations);
+};
+var ContextMenu = (Opener, Items = [], { clientX = 0, clientY = 0 } = {}) => {
+  const isOpened2 = createSignal3(false), showContextMenu = (event) => {
+    event.preventDefault();
+    clientX = event.clientX;
+    clientY = event.clientY;
+    isOpened2.value = true;
+  }, MenuItems = div5({
+    onclick: () => isOpened2.value = false,
+    style: "position: fixed; inset: 0; z-index: 3000;"
+  }, [
+    div5({
+      style: {
+        position: "absolute",
+        left: `${clientX}px`,
+        top: `${clientY}px`,
+        backgroundColor: "var(--background-color)",
+        borderRadius: "4px",
+        boxShadow: "0 2px 8px var(--selected-color)",
+        padding: "8px 0",
+        minWidth: "112px"
+      }
+    }, Items.map((item) => div5({
+      onclick: () => {
+        item.onclick();
+        isOpened2.value = false;
+      },
+      style: "padding: 12px 16px; cursor: pointer; font-size: 14px; transition: background 0.2s;"
+    }, item.label)))
+  ]);
+  return div5(
+    {
+      style: "padding: 8px 0;"
+    },
+    [div5({ onclick: (e) => showContextMenu(e) }, Opener), MenuItems]
+  );
+};
+var Menu = (items = [], { title, onItemClick } = {}) => {
+  return [
+    div5({ style: "padding: 16px; font-weight: 600;" }, title),
+    hr2(),
+    items.map((item) => div5({
+      onclick: (e) => onItemClick({ e, item }),
+      style: "padding: 12px 16px; border-radius: 100px; cursor: pointer; margin: 4px 0;"
+    }, item.label))
+  ];
+};
+var Link = (text, {
+  href = "javascript:void(0)",
+  onClick,
+  size = "24px",
+  showIcon = true
+} = {}) => {
+  const isHovered = createSignal3(false), isExternal = /^https?:\/\//.test(href) || /^www\./.test(href);
+  return a(
+    {
+      href,
+      target: isExternal ? "_blank" : "_self",
+      rel: isExternal ? "noopener noreferrer" : "",
+      onpointerenter: () => isHovered.value = true,
+      onpointerleave: () => isHovered.value = false,
+      onclick: (e) => {
+        if (onClick) {
+          e.preventDefault();
+          onClick(e);
+        }
+      },
+      style: {
+        cursor: "pointer",
+        textDecoration: () => isHovered.value ? "underline" : "none",
+        color: () => isHovered.value ? `var(--primary-color)` : "var(--foreground-color)",
+        transition: "color 0.2s ease, text-decoration 0.2s ease",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "4px"
+      }
+    },
+    span5({
+      style: { size, height: "20px", spacing: "1px", weight: "600", padding: "5px" }
+    }, text),
+    isExternal && showIcon ? span5({
+      style: {
+        fontSize: "0.85em",
+        opacity: "0.7",
+        transition: "transform 0.2s ease",
+        transform: () => isHovered.value ? "translate(2px, -2px)" : "none"
+      }
+    }, "\u2197") : null
+  );
+};
+
+// src/material/selectors.js
+var { htmlElements: htmlElements6 } = XJS;
+var { div: div6, span: span6, button: button5 } = htmlElements6;
+var SingleSelector = (options = [], { selected } = {}) => {
+  return div6(
     {
       style: {
         display: "flex",
@@ -1453,7 +1719,7 @@ var MultiSelector = (options = [], { selected } = {}) => {
     }
     selected.value = current;
   };
-  return div5(
+  return div6(
     {
       style: {
         display: "flex",
@@ -1474,7 +1740,7 @@ var MultiSelector = (options = [], { selected } = {}) => {
   );
 };
 var SegmentedListSelector = (segments = [], { selected } = {}) => {
-  return div5(
+  return div6(
     {
       style: {
         display: "inline-flex",
@@ -1487,7 +1753,7 @@ var SegmentedListSelector = (segments = [], { selected } = {}) => {
     segments.map((segment, index) => {
       const isSelected = () => selected.value === segment;
       const isLast = index === segments.length - 1;
-      return button4(
+      return button5(
         {
           onclick: () => selected.value = segment,
           style: {
@@ -1507,185 +1773,22 @@ var SegmentedListSelector = (segments = [], { selected } = {}) => {
         },
         [
           // Optional Icon
-          segment.icon ? span5(segment.icon) : null,
+          segment.icon ? span6(segment.icon) : null,
           // Label
-          span5(segment.value),
+          span6(segment.value),
           // M3 specification: Show checkmark icon if selected
-          () => isSelected() ? span5({ style: "font-size: 16px" }, "\u2713") : null
+          () => isSelected() ? span6({ style: "font-size: 16px" }, "\u2713") : null
         ]
       );
     })
   );
 };
 
-// src/material/style.js
-var { htmlElements: htmlElements6, createSignal: createSignal3 } = XJS;
-var { div: div6, hr: hr2, bold } = htmlElements6;
-var Center = ({ child } = {}) => {
-  return div6({
-    style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      textAlign: "center",
-      width: "100%",
-      height: "100%",
-      flex: "1"
-      // Take up available space in Flex parents
-    }
-  }, child);
-};
-var Border = (child, { side = "all", border = "1px solid var(--selected-color)", radius = "0px" } = {}) => {
-  const borderStyle = {
-    borderRadius: radius,
-    overflow: "hidden",
-    // Ensures child content doesn't bleed over corners
-    display: "inline-block",
-    width: "100%",
-    boxSizing: "border-box"
-  };
-  borderStyle["border" + (side == "all" ? "" : "-" + side)] = border;
-  return div6({
-    style: borderStyle
-  }, child);
-};
-var Margin = (child, { side = "all", margin = "0px" } = {}) => {
-  const marginStyle = {
-    display: "block",
-    // Ensures margin is respected in the flow
-    boxSizing: "border-box"
-  };
-  marginStyle["margin" + (side == "all" ? "" : "-" + side)] = margin;
-  return div6({
-    style: marginStyle
-  }, child);
-};
-var Padding = (child, { side = "all", padding = "0px" } = {}) => {
-  const paddingStyle = {
-    display: "inline-block",
-    // Wraps tightly around child
-    width: "100%",
-    boxSizing: "border-box"
-  };
-  paddingStyle["padding" + (side == "all" ? "" : "-" + side)] = padding;
-  return div6({
-    style: paddingStyle
-  }, child);
-};
-var Transform = (child, { transform = "", origin = "center" } = {}) => {
-  return div6({
-    style: {
-      display: "inline-block",
-      transform: () => transform?.isSignal ? transform.value : transform,
-      transformOrigin: origin,
-      transition: "transform 0.2s ease-out"
-    }
-  }, child);
-};
-var Opacity = (child, { opacity = 1 } = {}) => {
-  return div6({
-    style: {
-      opacity: () => opacity?.isSignal ? opacity.value : opacity,
-      transition: "opacity 0.2s linear",
-      pointerEvents: (opacity?.isSignal ? opacity.value : opacity) < 0.1 ? "none" : "auto"
-    }
-  }, child);
-};
-var Align = (child, { alignment = "center" } = {}) => {
-  const map = {
-    "top-left": { x: "flex-start", y: "flex-start" },
-    "top-center": { x: "center", y: "flex-start" },
-    "top-right": { x: "flex-end", y: "flex-start" },
-    "center": { x: "center", y: "center" },
-    "bottom-left": { x: "flex-start", y: "flex-end" },
-    "bottom-center": { x: "center", y: "flex-end" },
-    "bottom-right": { x: "flex-end", y: "flex-end" }
-  };
-  const pos = map[alignment] || map.center;
-  return div6({
-    style: {
-      display: "flex",
-      justifyContent: pos.x,
-      alignItems: pos.y
-    }
-  }, child);
-};
-var Expanded = (child, { flex = 1 } = {}) => {
-  return div6({
-    style: {
-      flex,
-      display: "flex",
-      flexDirection: "column"
-    }
-  }, child);
-};
-var Marker = ({ width = "100%", height = "1px", color = "var(--primary-color)" } = {}) => {
-  return div6({
-    style: {
-      width,
-      height,
-      background: color,
-      borderRadius: "2px",
-      alignSelf: "center"
-    }
-  });
-};
-var Divider = ({ indent = "0px" } = {}) => {
-  return hr2({
-    style: `margin: 0; margin-left: ${indent}; border: 0; border-top: 1px solid var(--selected-color);`
-  });
-};
-var Bold = (child, { fontSize = "25px" } = {}) => {
-  return bold({
-    style: {
-      fontSize
-    }
-  }, child);
-};
-var Movable = (child, { initialX = window.innerWidth, initialY = window.innerHeight } = {}) => {
-  const isMoving = createSignal3(false), x = createSignal3(initialX), y = createSignal3(initialY);
-  let offset = { x: 0, y: 0 };
-  const onPointerDown = (e) => {
-    isMoving.value = true;
-    offset.x = e.clientX - x.value;
-    offset.y = e.clientY - y.value;
-    e.target.setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e) => {
-    if (!isMoving.value) return;
-    x.value = e.clientX - offset.x;
-    y.value = e.clientY - offset.y;
-  };
-  const onPointerUp = (e) => {
-    isMoving.value = false;
-    e.target.releasePointerCapture(e.pointerId);
-  };
-  return div6({
-    onpointerdown: onPointerDown,
-    onpointermove: onPointerMove,
-    onpointerup: onPointerUp,
-    style: {
-      position: "fixed",
-      // zIndex: '5000',
-      cursor: () => isMoving.value ? "grabbing" : "grab",
-      // Reactive coordinates
-      left: () => `${x.value}px`,
-      top: () => `${y.value}px`,
-      // Visual feedback
-      touchAction: "none",
-      // Prevents scrolling while moving on mobile
-      transition: () => isMoving.value ? "none" : "transform 0.1s ease",
-      boxShadow: () => isMoving.value ? "0 12px 24px rgba(0,0,0,0.2)" : "0 4px 8px rgba(0,0,0,0.1)",
-      transform: () => isMoving.value ? "scale(1.02)" : "scale(1)"
-    }
-  }, child);
-};
-
 // src/material/icons.js
 var { htmlElements: htmlElements7, svgElements: svgElements2 } = XJS;
-var { span: span6 } = htmlElements7;
+var { span: span7 } = htmlElements7;
 var { path, svg } = svgElements2;
-var SvgIcon = (pathData, { size = 24, opacity = 1, color = "inherit" } = {}) => {
+var SvgIcon = (pathData, { size = 24, opacity = 1, color = "var(--foreground-color)" } = {}) => {
   const svgPath = path();
   svgPath.setAttribute("d", pathData);
   const svgIcon = svg({
@@ -1702,7 +1805,7 @@ var SvgIcon = (pathData, { size = 24, opacity = 1, color = "inherit" } = {}) => 
   return svgIcon;
 };
 var Icon = (child, { size = 24, color = "inherit", weight = 200 } = {}) => {
-  return span6({
+  return span7({
     style: {
       // Font settings to replace a CSS class
       fontFamily: "Material Symbols Outlined",
@@ -1731,13 +1834,13 @@ var Icon = (child, { size = 24, color = "inherit", weight = 200 } = {}) => {
   }, child);
 };
 
-// src/material/index.js
+// src/index.js
 var Layouts = { App, Scaffold, ActionSheet, Card, Chip, CircularProgress, LinearProgress, PageView, Snackbar, Toast, Badge, Accordion, AlertDialog, Carousel };
 var Containers = { ListView, ListTile, Column, Container, Flex, GridView, Placeholder, Row, SizedBox };
-var Navigations = { Menu, Sidebar, TabBar, AppBar, Breadcrumbs, Pagination, ContextMenu, NavigationBar, NavigationDestination, NavigationRail, PopupMenu, BottomAppBar };
-var Inputs = { FloatingButton, Text, TextField, EmailField, PasswordField, NumericField, Form, Button, IconButton, Logo, Switch, Checkbox, DatePicker, Image, Radio, Slider, InputField, TimePicker };
+var Navigations = { Link, Menu, Sidebar, TabBar, AppBar, Breadcrumbs, Pagination, ContextMenu, NavigationBar, NavigationDestination, NavigationRail, PopupMenu, BottomAppBar };
+var Inputs = { ActionButton, FloatingButton, Text, TextField, EmailField, PasswordField, NumericField, Form, Button, IconButton, Logo, Switch, Checkbox, DatePicker, Image, Radio, Slider, InputField, TimePicker };
 var Selectors = { SingleSelector, MultiSelector, SegmentedListSelector };
-var Styles = { Center, Margin, Movable, Align, Bold, Border, Divider, Expanded, Marker, Opacity, Padding, Transform };
+var Styles = { Center, Margin, Movable, Align, Bold, Border, Divider, Expanded, Marker, Opacity, Padding, Transform, Heading, Position };
 var Icons = { Icon, SvgIcon };
 globalThis.Material = {
   Containers,
